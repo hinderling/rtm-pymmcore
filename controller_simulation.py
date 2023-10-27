@@ -9,7 +9,7 @@ from useq import MDAEvent
 from queue import Queue
 import numpy as np
 from dmd import DMD
-import threading
+from PyQt5.QtCore import QThread
 import pandas as pd
 
 
@@ -32,7 +32,7 @@ class Analyzer:
 
         if img_type == ImgType.IMG_RAW:
             #raw image, send to pipeline and store
-            thread = threading.Thread(target=self.pipeline.run, args=(img, event))
+            thread = QThread(target=self.pipeline.run, args=(img, event))
             thread.start()
             
             #self.pipeline.run(img,event)
