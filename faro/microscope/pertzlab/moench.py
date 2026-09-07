@@ -52,6 +52,29 @@ def _pump_qt_events() -> None:
         app.processEvents()
 
 
+def _drain_posted_qt_events() -> None:
+    """Deliver Qt events posted to the calling thread; no-op without Qt.
+
+    GUI handlers running on an acquisition thread (psygnal backend) can
+    create QObjects there, so queued Qt events accumulate on that thread
+    with no event loop to deliver them. Windows delivers the leftovers
+    during thread shutdown while holding the loader lock; blocking on the
+    GIL there deadlocks the process against a painting main thread.
+    Delivering the events here, where the GIL is taken normally, leaves
+    nothing for the shutdown path. DeferredDelete events need their own
+    pass because ``sendPostedEvents`` excludes them by default.
+    """
+    try:
+        from qtpy.QtCore import QCoreApplication, QEvent
+    except Exception:
+        return
+    if QCoreApplication.instance() is None:
+        return
+    with suppress(Exception):
+        QCoreApplication.sendPostedEvents()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+
 class MoenchCMMCorePlus(pymmcore_plus.CMMCorePlus):
     """CMMCorePlus for the Moench (Nikon Ti): confirm stage moves and cube changes.
 
@@ -111,6 +134,40 @@ class MoenchCMMCorePlus(pymmcore_plus.CMMCorePlus):
         self._z_targets = {}  # device label -> z
         self._pending_moves = set()  # stages commanded to move, not yet arrived
         self._verifying_filter = False  # guards the verify's own turret moves
+
+    def run_mda(
+        self,
+        events,
+        *,
+        output=None,
+        block: bool = False,
+        dimension_overrides=None,
+    ) -> threading.Thread:
+        """Run the MDA on a thread that drains its posted Qt events before exiting.
+
+        Mirrors ``CMMCorePlus.run_mda`` except that the acquisition thread
+        calls :func:`_drain_posted_qt_events` after the run, so no Qt events
+        are left for Windows thread shutdown (see the helper's docstring for
+        the deadlock this prevents).
+        """
+        if self.mda.is_running():
+            raise ValueError(
+                "Cannot start an MDA while the previous MDA is still running."
+            )
+
+        def _run_and_drain() -> None:
+            try:
+                self.mda.run(
+                    events, output=output, dimension_overrides=dimension_overrides
+                )
+            finally:
+                _drain_posted_qt_events()
+
+        th = threading.Thread(target=_run_and_drain)
+        th.start()
+        if block:
+            th.join()
+        return th
 
     def _is_managed_stage(self, label: str) -> bool:
         return bool(label) and label in (
@@ -226,10 +283,15 @@ class MoenchCMMCorePlus(pymmcore_plus.CMMCorePlus):
                     raise
 
     def _confirm_xy(self, dev, target) -> None:
-        tx, ty = target
         use_default = dev == self.getXYStageDevice()
         deadline = time.perf_counter() + self.POSITION_CONFIRM_MAX_S
         while time.perf_counter() < deadline:
+            # A newer command supersedes the captured target, so an interactive
+            # burst of moves (clicking through the position list) waits for
+            # where the stage is actually headed instead of timing out on a
+            # stale target.
+            target = self._xy_targets.get(dev, target)
+            tx, ty = target
             try:
                 x, y = self.getXYPosition() if use_default else self.getXYPosition(dev)
             except Exception:
@@ -242,9 +304,31 @@ class MoenchCMMCorePlus(pymmcore_plus.CMMCorePlus):
             dev, self.XY_TOLERANCE_UM, target, self.POSITION_CONFIRM_MAX_S,
         )
 
+    def _pfs_owns_focus(self) -> bool:
+        """True when continuous focus (PFS) is driving the focus stage.
+
+        While engaged, the PFS holds TIZDrive at whatever position keeps the
+        sample in focus, so a commanded Z target is unreachable and waiting
+        for it can only time out. With the unpatched Nikon adapter this flag
+        is frozen at its config-load value; a stale True then skips a Z
+        confirmation that would have been valid, which costs the check but
+        never blocks a move. Best-effort: False when the read fails.
+        """
+        try:
+            return bool(self.isContinuousFocusEnabled())
+        except Exception:
+            return False
+
     def _confirm_z(self, dev, target) -> None:
         deadline = time.perf_counter() + self.POSITION_CONFIRM_MAX_S
         while time.perf_counter() < deadline:
+            if self._pfs_owns_focus():
+                logger.debug(
+                    "Skipping Z confirmation for %s: PFS is engaged and owns focus",
+                    dev,
+                )
+                return
+            target = self._z_targets.get(dev, target)
             try:
                 z = self.getPosition(dev)
             except Exception:
