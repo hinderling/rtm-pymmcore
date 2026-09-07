@@ -1,11 +1,11 @@
 """Execute the example notebooks and the templates on the virtual microscope.
 
-The templates ship with ``TODO`` cells that end in ``raise NotImplementedError``
-so nobody can run them unfilled. Here every TODO cell is swapped for a
-virtual-scope filler (keyed by its ``todo:<name>`` tag) and the notebook is
-executed in a real kernel. Cells tagged ``gui`` (napari) are dropped. The
-examples' ``parameters`` cell is overridden with small frame counts so the
-whole file stays fast.
+Templates ship with working virtual-scope defaults, so they run verbatim
+in a real kernel. Only TODO cells listed in ``FILLERS`` (those that end in
+``raise NotImplementedError`` because no default makes sense, such as a path
+to data on disk) are swapped for a filler keyed by their ``todo:<name>`` tag.
+Cells tagged ``gui`` (napari) are dropped, and cells tagged ``parameters``
+get small frame counts appended so the whole file stays fast.
 
 Requires the ``virtual-microscope`` and ``test`` extras.
 """
@@ -32,71 +32,20 @@ SKIP_TAGS = {"gui"}
 TODO_PREFIX = "todo:"
 TIMEOUT_S = 600
 
-VIRTUAL_SCOPE = """
-from virtual_microscope.backends.optogenetic import setup_optogenetic
-from faro.microscope.simulation import UniMMCoreSimulation
-core, sim = setup_optogenetic(n_cells=15)
-mic = UniMMCoreSimulation(mmc=core)
-mic.init_scope()
-"""
-
-# Fillers for every TODO cell of every template. A template TODO tag without
-# a filler here fails the test, and so does a filler without a matching tag.
+# Fillers for TODO cells that have no runnable default. A filler without a
+# matching tag, or a raise-cell without a filler, fails the structure tests.
 FILLERS: dict[str, dict[str, str]] = {
-    "live_experiment/experiment.ipynb": {
-        "todo:microscope": VIRTUAL_SCOPE,
-        "todo:settings": """
-import tempfile
-STORAGE_ROOT = tempfile.mkdtemp(prefix="faro_template_live_")
-EXPERIMENT_NAME = "test_run"
-INTERVAL_S = 0.3
-N_BASELINE = 2
-N_STIM = 3
-N_RECOVERY = 2
-IMAGING_CHANNELS = [{"config": "phase-contrast", "exposure": 50}]
-STIM_CHANNEL = {"config": "phase-contrast", "exposure": 50}
-""",
-        "todo:segmentation": """
-from faro.segmentation.base import OtsuSegmentator
-segmentators = [
-    SegmentationMethod(name="labels", segmentation_class=OtsuSegmentator(), use_channel=0, save_tracked=True),
-]
-""",
-        "todo:features": """
-from faro.feature_extraction.simple import SimpleFE
-feature_extractor = SimpleFE("labels")
-""",
-        "todo:stimulation": """
-from faro.stimulation.base import StimWholeFOV
-stimulator = StimWholeFOV()
-""",
-        "todo:positions": """
-fov_positions = utils.generate_fov_positions_from_list(mic, [{"x": 0.0, "y": 0.0, "z": 0.0}])
-""",
-    },
+    "live_experiment/experiment.ipynb": {},
     "reanalysis/reanalysis.ipynb": {
         # SRC_PATH is injected by the test after it has produced a source run.
         "todo:paths": """
 SRC_PATH = os.environ["FARO_TEST_SRC_PATH"]
 OUT_PATH = SRC_PATH + "_reanalysis"
 """,
-        "todo:pipeline": """
-from faro.segmentation.base import OtsuSegmentator
-from faro.feature_extraction.simple import SimpleFE
-from faro.tracking.trackpy import TrackerTrackpy
-segmentators = [
-    SegmentationMethod(name="labels", segmentation_class=OtsuSegmentator(), use_channel=0, save_tracked=True),
-]
-feature_extractor = SimpleFE("labels")
-tracker = TrackerTrackpy(search_range=30)
-stimulator = None
-USE_OLD_SEGMENTATIONS = False
-USE_OLD_STIM_MASKS = True
-""",
     },
 }
 
-EXAMPLE_PARAMS = {
+PARAMS = {
     "live_experiment.ipynb": """
 INTERVAL_S = 0.3
 N_BASELINE = 2
@@ -104,6 +53,12 @@ N_STIM = 4
 N_RECOVERY = 2
 N_EXTRA = 2
 STIM_FRACTION = 0.2
+""",
+    "live_experiment/experiment.ipynb": """
+INTERVAL_S = 0.3
+N_BASELINE = 2
+N_STIM = 3
+N_RECOVERY = 2
 """,
 }
 
@@ -134,8 +89,7 @@ def _prepare(nb_path: Path, fillers: dict[str, str], params: str | None):
         if tags & SKIP_TAGS:
             continue
         todo = _todo_tag(cell)
-        if todo is not None:
-            assert todo in fillers, f"{nb_path.name}: no filler for {todo}"
+        if todo is not None and todo in fillers:
             seen.add(todo)
             cell.source = fillers[todo]
         elif "parameters" in tags and params is not None:
@@ -203,16 +157,16 @@ def test_readme_anchors_exist(nb_path: Path):
 
 
 @pytest.mark.parametrize("rel", sorted(FILLERS), ids=lambda r: r.split("/")[0])
-def test_template_todo_cells_raise(rel: str):
+def test_template_raise_cells_match_fillers(rel: str):
+    """Every cell that raises NotImplementedError has a filler, and vice versa."""
     nb = nbformat.read(TEMPLATES / rel, as_version=4)
-    todo_cells = [c for c in nb.cells if c.cell_type == "code" and _todo_tag(c)]
-    assert todo_cells, "template has no TODO cells"
-    for cell in todo_cells:
-        assert "raise NotImplementedError" in cell.source, (
-            f"{rel}: TODO cell {_todo_tag(cell)} must end in raise NotImplementedError"
-        )
-    tags = {_todo_tag(c) for c in todo_cells}
-    assert tags == set(FILLERS[rel]), f"{rel}: TODO tags {tags} != fillers {set(FILLERS[rel])}"
+    raising = {
+        _todo_tag(c)
+        for c in nb.cells
+        if c.cell_type == "code" and "raise NotImplementedError" in c.source
+    }
+    assert None not in raising, f"{rel}: a raising cell is missing its todo:<name> tag"
+    assert raising == set(FILLERS[rel]), f"{rel}: raise cells {raising} != fillers {set(FILLERS[rel])}"
 
 
 def test_template_folders_are_complete():
@@ -231,14 +185,14 @@ def test_template_folders_are_complete():
 @pytest.mark.parametrize("name", ["live_experiment.ipynb"])
 def test_example_runs(name: str):
     nb_path = EXAMPLES / name
-    nb = _prepare(nb_path, fillers={}, params=EXAMPLE_PARAMS.get(name))
+    nb = _prepare(nb_path, fillers={}, params=PARAMS.get(name))
     _execute(nb, cwd=EXAMPLES)
 
 
 @pytest.mark.examples
 def test_live_template_runs():
     rel = "live_experiment/experiment.ipynb"
-    nb = _prepare(TEMPLATES / rel, fillers=FILLERS[rel], params=None)
+    nb = _prepare(TEMPLATES / rel, fillers=FILLERS[rel], params=PARAMS.get(rel))
     _execute(nb, cwd=(TEMPLATES / rel).parent)
 
 

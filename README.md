@@ -58,7 +58,7 @@ handle.wait()  # run_experiment is non-blocking; wait() blocks until done
 | Path | What it is |
 |------|------------|
 | [`examples/live_experiment.ipynb`](examples/live_experiment.ipynb) | A full feedback experiment on a virtual microscope: the four objects, custom pipeline components, three phases, napari GUI, result plots. |
-| [`templates/live_experiment/`](templates/live_experiment/) | Copy-and-fill folder for a real experiment: notebook with TODO cells and a `pyproject.toml` that pins faro. |
+| [`templates/live_experiment/`](templates/live_experiment/) | Copy-and-fill folder for a real experiment: notebook with TODO cells that runs on the virtual microscope as shipped, plus a `pyproject.toml` that pins faro. |
 | [`templates/reanalysis/`](templates/reanalysis/) | Copy-and-fill folder to re-process an experiment that is already on disk. |
 | [`templates/README.md`](templates/README.md) | How to copy a template, `uv sync`, pin faro to a commit, update the pin, and work against a local checkout. |
 
