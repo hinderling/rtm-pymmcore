@@ -335,7 +335,9 @@ class OmeZarrWriter:
                 stim readout images are stored as additional channel(s) in the
                 raw zarr array (zeros for non-stim timepoints).  If False
                 (default), stim readouts fall back to TIFF.
-            n_timepoints: Expected number of timepoints. None = unbounded.
+            n_timepoints: Expected number of timepoints; pre-sizes the
+                multi-position arrays. The single-position stream is always
+                unbounded so runs can be continued or extended.
             label_dtype: Dtype for label arrays.
             raw_chunk_t: Temporal chunk size for raw data.
             raw_shard_t: Temporal shard size for raw data (None = same as chunk).
@@ -473,10 +475,15 @@ class OmeZarrWriter:
 
         dimensions = []
 
-        # Time (unbounded OK — it's the first dimension)
+        # Time is always unbounded here: continue_experiment / extend_experiment
+        # append past the first run's length, and a bounded ome-writers stream
+        # cannot grow (it raises "would exceed total of N frames"). ome-writers
+        # resizes with amortised growth and closes at the exact written length,
+        # so nothing is lost by not declaring the count. n_timepoints still
+        # pre-sizes the direct multi-position path (see set_n_timepoints).
         t_kwargs: dict = dict(
             name="t",
-            count=self._n_timepoints,
+            count=None,
             chunk_size=self._raw_chunk_t,
             type="time",
         )
@@ -786,7 +793,8 @@ class OmeZarrWriter:
 
         No-op when ``n`` does not exceed the current declared length. Only the
         direct (multi-position) path pre-sizes; the single-position ome-writers
-        stream grows on append and is unaffected.
+        stream is unbounded and grows on append. The Controller calls this from
+        ``continue_experiment`` and ``extend_experiment``.
         """
         if n <= (self._n_timepoints or 0):
             return

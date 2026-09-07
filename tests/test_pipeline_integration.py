@@ -129,6 +129,36 @@ class TestEndToEndNoStim:
         assert abs(positions[1][1] - CIRCLE2_CENTER[1]) < 1
 
 
+class TestContinueExperimentOmeZarr:
+    """Continuing a single-position OME-Zarr run must grow the time axis.
+
+    Regression: the ome-writers stream was created with a fixed time count,
+    so every frame of the continued phase failed with "would exceed total of
+    N frames" and was silently dropped (only logged as a background error).
+    """
+
+    def test_continued_frames_land_in_the_store(self, tmp_dir, tracker):
+        import zarr
+        from faro.core.writers import OmeZarrWriter
+
+        pipeline = _make_pipeline(tmp_dir, tracker=tracker, with_stim=False)
+        ctrl = Controller(
+            FakeMicroscope(CircleScene()), pipeline, writer=OmeZarrWriter(tmp_dir)
+        )
+        ctrl.run_experiment(make_events(N_PHASE1_FRAMES), validate=False).wait()
+        ctrl._analyzer.wait_idle()
+        ctrl.continue_experiment(make_events(N_PHASE2_FRAMES), validate=False).wait()
+        ctrl._analyzer.wait_idle()
+        ctrl.finish_experiment()
+
+        assert ctrl.background_errors == [], [
+            e.message for e in ctrl.background_errors
+        ]
+        raw = zarr.open(os.path.join(tmp_dir, "acquisition.ome.zarr"), mode="r")["0"]
+        assert raw.shape[0] == N_TOTAL_FRAMES, raw.shape
+        assert raw[N_TOTAL_FRAMES - 1].max() > 0, "last continued frame is empty"
+
+
 class TestContinueExperimentModeMismatchRaises:
     """``continue_experiment`` must refuse to change ``stim_mode`` mid-run."""
 
