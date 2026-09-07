@@ -7,7 +7,7 @@ to data on disk) are swapped for a filler keyed by their ``todo:<name>`` tag.
 Cells tagged ``gui`` (napari) are dropped, and cells tagged ``parameters``
 get small frame counts appended so the whole file stays fast.
 
-Requires the ``virtual-microscope`` and ``test`` extras.
+Requires the ``test`` extra.
 """
 
 from __future__ import annotations

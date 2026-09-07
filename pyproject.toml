@@ -21,6 +21,10 @@ dependencies = [
     "ome-writers",
     "napari-ome-zarr",
     "zarr>=3",
+    # Pure-Python simulated microscope (brings numba and opencv). A base
+    # dependency so the example notebook and the templates run right after
+    # `uv sync`, without hardware or Micro-Manager.
+    "virtual-microscope",
 ]
 
 [project.optional-dependencies]
@@ -55,8 +59,7 @@ cellpose = [
     # source overrides for packages declared as direct deps).
     "torchvision",
     # cellpose imports cv2 but doesn't pin opencv itself; declare it here
-    # so the cellpose extra is self-sufficient (was only pulled in
-    # transitively via the virtual-microscope extra before).
+    # so the cellpose extra is self-sufficient.
     "opencv-python",
     ]
 
@@ -69,12 +72,6 @@ remote-segmentation = [
     "imaging-server-kit",
 ]
 
-
-virtual-microscope = [
-    "virtual-microscope",
-    "opencv-python",
-    "imageio[ffmpeg]"
-]
 
 api74 = [
     "pymmcore==11.10.0.74.1"

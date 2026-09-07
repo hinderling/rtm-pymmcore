@@ -62,7 +62,7 @@ handle.wait()  # run_experiment is non-blocking; wait() blocks until done
 | [`templates/reanalysis/`](templates/reanalysis/) | Copy-and-fill folder to re-process an experiment that is already on disk. |
 | [`templates/README.md`](templates/README.md) | How to copy a template, `uv sync`, pin faro to a commit, update the pin, and work against a local checkout. |
 
-The example needs `uv sync --extra virtual-microscope`. The test suite executes the example and both templates on the virtual microscope, so they always match the code. Real experiments live in the separate [faro-experiments](https://github.com/pertzlab/faro-experiments) repository: one folder per experiment, each pinned to a faro commit.
+The virtual microscope is part of the base install, so the example and the templates run right after `uv sync`. The test suite executes them on it, so they always match the code. Real experiments live in the separate [faro-experiments](https://github.com/pertzlab/faro-experiments) repository: one folder per experiment, each pinned to a faro commit.
 
 ## Pipeline
 
@@ -677,22 +677,21 @@ This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
 ```bash
 git clone https://github.com/pertzlab/faro.git
 cd faro
-uv sync --extra virtual-microscope
+uv sync
 uv run --no-sync --with jupyterlab jupyter lab examples/live_experiment.ipynb
 ```
 
-The second line opens the [example notebook](examples/live_experiment.ipynb) in Jupyter (VS Code with the `.venv` interpreter works as well); plain `uv sync` is enough if you only need the library. For your own experiments, start from a [template](templates/) instead of working inside this repository.
+The second line opens the [example notebook](examples/live_experiment.ipynb) in Jupyter (VS Code with the `.venv` interpreter works as well). It runs on the bundled virtual microscope, so no hardware or Micro-Manager install is needed. For your own experiments, start from a [template](templates/) instead of working inside this repository.
 
 ### Extras
 
-Optional dependency groups are available for segmentation backends and simulation:
+Optional dependency groups are available for segmentation backends and testing:
 
 | Extra | Packages | Use case |
 |-------|----------|----------|
 | `cellpose` | cellpose, torch | Cellpose segmentation |
 | `stardist` | stardist, tensorflow, csbdeep | StarDist segmentation |
 | `convpaint` | napari-convpaint, scipy | ConvPaint segmentation |
-| `virtual-microscope` | virtual-microscope | Fully simulated microscope with synthetic cell images. Needed for the example notebook and its tests. |
 | `test` | pytest, nbclient, motile | Run the test suite, including the notebook tests. |
 
 Install one or more extras with `uv sync`:
@@ -700,7 +699,7 @@ Install one or more extras with `uv sync`:
 ```bash
 uv sync --extra cellpose
 uv sync --extra cellpose --extra stardist
-uv sync --extra virtual-microscope
+uv sync --extra test
 ```
 
 Alternatively, with pip (installs the package with all its dependencies):
