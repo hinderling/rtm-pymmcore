@@ -18,7 +18,6 @@ dependencies = [
     "pymmcore-widgets",
     "trackpy",
     "napari-micromanager",
-    "pymmcore-widgets",
     "ome-writers",
     "napari-ome-zarr",
     "zarr>=3",
@@ -103,7 +102,9 @@ conflicts = [
 torch = { index = "pytorch-cu130" }
 torchvision = { index = "pytorch-cu130" }
 virtual-microscope = { git = "https://github.com/hinderling/virtual-microscope.git" }
-pymmcore-widgets = {git = "https://github.com/pymmcore-plus/pymmcore-widgets.git" }
+# The pertzlab integration branch: upstream main + the lab's stage map,
+# tweaks and in-flight upstream fixes. See PERTZLAB.md on that branch.
+pymmcore-widgets = { git = "https://github.com/pertzlab/pymmcore-widgets.git", branch = "pertzlab" }
 # PyPI napari-micromanager is 0.2.0 (no MainWindow(mmcore=...) and predates
 # the async-relevant fixes: _image_snapped race, device-leak teardown,
 # preview-during-run). Track upstream main like the other faro envs.
