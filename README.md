@@ -35,7 +35,7 @@ pipeline = ImageProcessingPipeline(
     segmentators=[SegmentationMethod("labels", OtsuSegmentator(), use_channel=0, save_tracked=True)],
     feature_extractor=SimpleFE("labels"),
     tracker=TrackerTrackpy(),
-    stimulator=MoveUp(),
+    stimulator=StimWholeFOV(),  # or your own, see Writing your own components
 )
 
 # 3. Define experiment parameters
@@ -58,8 +58,9 @@ handle.wait()  # run_experiment is non-blocking; wait() blocks until done
 | Path | What it is |
 |------|------------|
 | [`examples/live_experiment.ipynb`](examples/live_experiment.ipynb) | A full feedback experiment on a virtual microscope: the four objects, custom pipeline components, three phases, napari GUI, result plots. |
-| [`templates/live_experiment/`](templates/live_experiment/) | Copy-and-fill folder for a real experiment: notebook with TODO cells, `pyproject.toml`, and a short uv guide. |
+| [`templates/live_experiment/`](templates/live_experiment/) | Copy-and-fill folder for a real experiment: notebook with TODO cells and a `pyproject.toml` that pins faro. |
 | [`templates/reanalysis/`](templates/reanalysis/) | Copy-and-fill folder to re-process an experiment that is already on disk. |
+| [`templates/README.md`](templates/README.md) | How to copy a template, `uv sync`, pin faro to a commit, update the pin, and work against a local checkout. |
 
 The example needs `uv sync --extra virtual-microscope`. The test suite executes the example and both templates on the virtual microscope, so they always match the code. Real experiments live in the separate [faro-experiments](https://github.com/pertzlab/faro-experiments) repository: one folder per experiment, each pinned to a faro commit.
 
@@ -424,7 +425,7 @@ ctrl.run_experiment(events, stim_mode="current").wait()
 ```
 
 Use cases:
-- **Testing**: run the full pipeline on demo data without any microscope hardware
+- **Testing**: run the full pipeline on previously acquired data without any microscope hardware
 - **Re-analysis**: replay raw images through a new pipeline (different segmentation, tracking, etc.)
 - **Validation**: verify analysis logic reproducibly on known data
 
@@ -676,8 +677,11 @@ This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
 ```bash
 git clone https://github.com/pertzlab/faro.git
 cd faro
-uv sync
+uv sync --extra virtual-microscope
+uv run --no-sync --with jupyterlab jupyter lab examples/live_experiment.ipynb
 ```
+
+The second line opens the [example notebook](examples/live_experiment.ipynb) in Jupyter (VS Code with the `.venv` interpreter works as well); plain `uv sync` is enough if you only need the library. For your own experiments, start from a [template](templates/) instead of working inside this repository.
 
 ### Extras
 
@@ -688,7 +692,7 @@ Optional dependency groups are available for segmentation backends and simulatio
 | `cellpose` | cellpose, torch | Cellpose segmentation |
 | `stardist` | stardist, tensorflow, csbdeep | StarDist segmentation |
 | `convpaint` | napari-convpaint, scipy | ConvPaint segmentation |
-| `virtual-microscope` | virtual-microscope | Fully simulated microscope with synthetic cell images. Needed for the example notebooks and their tests. |
+| `virtual-microscope` | virtual-microscope | Fully simulated microscope with synthetic cell images. Needed for the example notebook and its tests. |
 | `test` | pytest, nbclient, motile | Run the test suite, including the notebook tests. |
 
 Install one or more extras with `uv sync`:

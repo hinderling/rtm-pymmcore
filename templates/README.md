@@ -9,7 +9,7 @@ Copy-and-fill notebooks for real work. Each folder is a complete uv project: cop
 
 ## Start a new experiment
 
-1. Copy the template folder into your experiments repository and rename it, for example `2026-01-01_erk_pulses`.
+1. Copy the template folder into your experiments repository (in the lab: [faro-experiments](https://github.com/pertzlab/faro-experiments)) and rename it, for example `2026-01-01_erk_pulses`.
 2. In `pyproject.toml`, set `name` and pin faro (see below).
 3. Open a terminal in the folder and run `uv sync`.
 4. Open the notebook, select the `.venv` kernel, and fill in the TODO cells.
@@ -21,7 +21,7 @@ Copy-and-fill notebooks for real work. Each folder is a complete uv project: cop
 | Task | Command |
 |------|---------|
 | Create or update the environment | `uv sync` |
-| Start Jupyter in this environment | `uv run --no-sync jupyter lab` |
+| Start Jupyter in this environment | `uv run --no-sync --with jupyterlab jupyter lab` |
 | Run a script in this environment | `uv run --no-sync python my_script.py` |
 | Add a package | `uv add <name>` |
 | Re-resolve faro after changing its pin | `uv lock --upgrade-package faro` then `uv sync` |
