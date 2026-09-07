@@ -25,7 +25,7 @@ pytest.importorskip("virtual_microscope")
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = ROOT / "examples"
-TEMPLATES = EXAMPLES / "templates"
+TEMPLATES = ROOT / "templates"
 README = ROOT / "README.md"
 
 SKIP_TAGS = {"gui"}
@@ -189,7 +189,7 @@ def _notebook_readme_links(nb_path: Path) -> set[str]:
 
 
 def _all_notebooks() -> list[Path]:
-    return sorted(EXAMPLES.rglob("*.ipynb"))
+    return sorted(EXAMPLES.rglob("*.ipynb")) + sorted(TEMPLATES.rglob("*.ipynb"))
 
 
 # ---------------------------------------------------------------------------
@@ -216,11 +216,11 @@ def test_template_todo_cells_raise(rel: str):
 
 
 def test_template_folders_are_complete():
+    assert (TEMPLATES / "README.md").exists(), "templates/README.md is missing"
     for folder in TEMPLATES.iterdir():
         if not folder.is_dir():
             continue
         assert (folder / "pyproject.toml").exists(), f"{folder.name}: missing pyproject.toml"
-        assert (folder / "README.md").exists(), f"{folder.name}: missing README.md"
         assert list(folder.glob("*.ipynb")), f"{folder.name}: missing notebook"
 
 

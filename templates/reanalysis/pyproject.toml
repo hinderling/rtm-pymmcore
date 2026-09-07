@@ -9,7 +9,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-# Pick ONE of the three lines below (see README.md in this folder).
+# Pick ONE of the three lines below (see templates/README.md in the faro repository).
 faro = { git = "https://github.com/pertzlab/faro.git", branch = "main" }
 # faro = { git = "https://github.com/pertzlab/faro.git", rev = "0123456789abcdef0123456789abcdef01234567" }
 # faro = { path = "../../faro", editable = true }

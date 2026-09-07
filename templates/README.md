@@ -1,13 +1,18 @@
-# Live experiment template
+# Templates
 
-A copy-and-fill notebook for a feedback (or plain timelapse) experiment on a real microscope. Every step is explained in the [live experiment example](../../02_live_experiment.ipynb), which runs the same structure on a virtual microscope.
+Copy-and-fill notebooks for real work. Each folder is a complete uv project: copy it into your experiments repository, rename it, run `uv sync`, and work through the cells marked **TODO**. Each TODO cell lists common choices as comments and ends with a `raise` line that you delete once the cell is filled in. Everything else works as it is.
+
+| Folder | Use it for |
+|--------|------------|
+| `live_experiment/` | A feedback or plain timelapse experiment on a real microscope. Same structure as the [live experiment example](../examples/02_live_experiment.ipynb), which runs on a virtual microscope and explains every step. |
+| `reanalysis/` | Re-processing an experiment already on disk with new segmentation, tracking or features. No microscope needed. Raw images are never rewritten; the output folder gets hard links to the raw data plus fresh labels, tracks and `exp_data.parquet`. See [Re-analysis](../README.md#re-analysis) in the faro README. |
 
 ## Start a new experiment
 
-1. Copy this folder into your experiments repository and rename it, for example `2026-01-01_erk_pulses`.
+1. Copy the template folder into your experiments repository and rename it, for example `2026-01-01_erk_pulses`.
 2. In `pyproject.toml`, set `name` and pin faro (see below).
 3. Open a terminal in the folder and run `uv sync`.
-4. Open `experiment.ipynb`, select the `.venv` kernel, and work through the cells marked **TODO**. Each one ends with a `raise` line that you delete once the cell is filled in.
+4. Open the notebook, select the `.venv` kernel, and fill in the TODO cells.
 
 `uv sync` creates a `.venv` folder next to the notebook with faro and all its dependencies. Never `pip install` into it by hand; use the commands below so `pyproject.toml` and `uv.lock` stay in sync.
 
@@ -40,7 +45,7 @@ Change the `rev` hash, run `uv lock --upgrade-package faro` and `uv sync`, rerun
 
 ## Working on faro itself
 
-To run this experiment against a local faro checkout, switch the source in `pyproject.toml` to the `path = ...` line (adjust the relative path), then `uv sync`. Code edits in the checkout are picked up immediately. Switch back to a `rev` pin and re-lock before the experiment goes dormant, so it stays reproducible.
+To run an experiment against a local faro checkout, switch the source in `pyproject.toml` to the `path = ...` line (adjust the relative path), then `uv sync`. Code edits in the checkout are picked up immediately. Switch back to a `rev` pin and re-lock before the experiment goes dormant, so it stays reproducible.
 
 ## When things look stale
 

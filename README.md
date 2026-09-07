@@ -59,8 +59,8 @@ handle.wait()  # run_experiment is non-blocking; wait() blocks until done
 |------|------------|
 | [`examples/01_getting_started.ipynb`](examples/01_getting_started.ipynb) | A ten-frame timelapse on a virtual microscope. Introduces the four objects and shows where results land. |
 | [`examples/02_live_experiment.ipynb`](examples/02_live_experiment.ipynb) | A full feedback experiment on the virtual microscope: custom pipeline components, three phases, napari GUI, result plots. |
-| [`examples/templates/live_experiment/`](examples/templates/live_experiment/) | Copy-and-fill folder for a real experiment: notebook with TODO cells, `pyproject.toml`, and a short uv guide. |
-| [`examples/templates/reanalysis/`](examples/templates/reanalysis/) | Copy-and-fill folder to re-process an experiment that is already on disk. |
+| [`templates/live_experiment/`](templates/live_experiment/) | Copy-and-fill folder for a real experiment: notebook with TODO cells, `pyproject.toml`, and a short uv guide. |
+| [`templates/reanalysis/`](templates/reanalysis/) | Copy-and-fill folder to re-process an experiment that is already on disk. |
 
 The examples need `uv sync --extra virtual-microscope`. The test suite executes both examples and both templates on the virtual microscope, so they always match the code. Real experiments live in the separate [faro-experiments](https://github.com/pertzlab/faro-experiments) repository: one folder per experiment, each pinned to a faro commit.
 
@@ -457,7 +457,7 @@ Key features:
 - **Hard-linking**: when outputting to OME-Zarr, raw data resolution levels are hard-linked instead of copied (falls back to copy on network shares)
 - **Timestep gap correction**: `correct_timestep_jumps=True` backfills missing timesteps
 
-The [re-analysis template](examples/templates/reanalysis/) is a copy-and-fill notebook for this pipeline.
+The [re-analysis template](templates/reanalysis/) is a copy-and-fill notebook for this pipeline.
 
 ## Storage
 
