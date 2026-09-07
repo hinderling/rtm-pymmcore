@@ -62,11 +62,7 @@ handle.wait()  # run_experiment is non-blocking; wait() blocks until done
 | [`examples/templates/live_experiment/`](examples/templates/live_experiment/) | Copy-and-fill folder for a real experiment: notebook with TODO cells, `pyproject.toml`, and a short uv guide. |
 | [`examples/templates/reanalysis/`](examples/templates/reanalysis/) | Copy-and-fill folder to re-process an experiment that is already on disk. |
 
-The examples need `uv sync --extra virtual-microscope`. The test suite executes
-both examples and both templates on the virtual microscope, so they always
-match the code. Real experiments live in the separate
-[faro-experiments](https://github.com/pertzlab/faro-experiments) repository:
-one folder per experiment, each pinned to a faro commit.
+The examples need `uv sync --extra virtual-microscope`. The test suite executes both examples and both templates on the virtual microscope, so they always match the code. Real experiments live in the separate [faro-experiments](https://github.com/pertzlab/faro-experiments) repository: one folder per experiment, each pinned to a faro commit.
 
 ## Pipeline
 
@@ -92,11 +88,7 @@ pipeline = ImageProcessingPipeline(
 
 ## Writing your own components
 
-Every component is a small class with one method. The pipeline calls that
-method once per frame and merges the result. `validate_events` compares your
-method signature with the base class before a run starts, so keep the argument
-names. The [live experiment example](examples/02_live_experiment.ipynb)
-implements one of each.
+Every component is a small class with one method. The pipeline calls that method once per frame and merges the result. `validate_events` compares your method signature with the base class before a run starts, so keep the argument names. The [live experiment example](examples/02_live_experiment.ipynb) implements one of each.
 
 ### Segmentator
 
@@ -111,10 +103,7 @@ class MySegmentator(Segmentator):
         ...
 ```
 
-Register it under a name: `SegmentationMethod("labels", MySegmentator(),
-use_channel=0, save_tracked=True)`. Several methods can run on the same frame,
-for example nuclei and whole cells. Other components refer to a segmentation
-by its name.
+Register it under a name: `SegmentationMethod("labels", MySegmentator(), use_channel=0, save_tracked=True)`. Several methods can run on the same frame, for example nuclei and whole cells. Other components refer to a segmentation by its name.
 
 ### Tracker
 
@@ -131,8 +120,7 @@ class MyTracker(Tracker):
         ...
 ```
 
-`TrackerTrackpy` and `TrackerMotile` cover most needs. Write your own only if
-you need a different linking model.
+`TrackerTrackpy` and `TrackerMotile` cover most needs. Write your own only if you need a different linking model.
 
 ### FeatureExtractor
 
@@ -155,9 +143,7 @@ class MyFE(FeatureExtractor):
         return pd.DataFrame(table), None
 ```
 
-The pipeline joins the returned columns onto the tracks by `label`. The second
-return value is reserved for masks that a reference-frame extractor needs; return
-`None` unless you use reference acquisitions.
+The pipeline joins the returned columns onto the tracks by `label`. The second return value is reserved for masks that a reference-frame extractor needs; return `None` unless you use reference acquisitions.
 
 ### Stimulator
 
@@ -183,9 +169,7 @@ class MyStim(StimWithPipeline):
         return mask, None
 ```
 
-`tracks` holds the tracked DataFrame up to the current frame, so a stimulator
-can treat cells differently by `particle` id or by a feature value. Return
-`True` instead of a mask to illuminate the whole field of view.
+`tracks` holds the tracked DataFrame up to the current frame, so a stimulator can treat cells differently by `particle` id or by a feature value. Return `True` instead of a mask to illuminate the whole field of view.
 
 ## Controller
 
@@ -363,18 +347,12 @@ handle.wait()  # block until the run finishes
 
 ### Validation
 
-`ctrl.validate_events(events)` runs before every experiment (`validate=False`
-skips it) and returns `False` with one warning per problem. Fix every warning
-before you start. It checks:
+`ctrl.validate_events(events)` runs before every experiment (`validate=False` skips it) and returns `False` with one warning per problem. Fix every warning before you start. It checks:
 
-- **Signatures**: each segmentator, tracker, feature extractor and stimulator
-  accepts the arguments of its base-class method.
-- **Required metadata**: every key a component lists in `required_metadata`
-  is present in the event metadata (`rtm_metadata`).
-- **Phases**: events with `phase_name` also carry `phase_id`, which names the
-  per-phase tracks file.
-- **Channels**: every imaging and stimulation config exists in a Micro-Manager
-  config group.
+- **Signatures**: each segmentator, tracker, feature extractor and stimulator accepts the arguments of its base-class method.
+- **Required metadata**: every key a component lists in `required_metadata` is present in the event metadata (`rtm_metadata`).
+- **Phases**: events with `phase_name` also carry `phase_id`, which names the per-phase tracks file.
+- **Channels**: every imaging and stimulation config exists in a Micro-Manager config group.
 - **Exposure**: within the camera's limits.
 - **Power**: `PowerChannel.power` within the range of the device property.
 - **DMD**: calibrated whenever the events contain stimulation channels.
