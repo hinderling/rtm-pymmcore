@@ -4,7 +4,7 @@ Copy-and-fill notebooks for real work. Each folder is a complete uv project: cop
 
 | Folder | Use it for |
 |--------|------------|
-| `live_experiment/` | A feedback or plain timelapse experiment on a real microscope. Same structure as the [live experiment example](../examples/02_live_experiment.ipynb), which runs on a virtual microscope and explains every step. |
+| `live_experiment/` | A feedback or plain timelapse experiment on a real microscope. Same structure as the [live experiment example](../examples/live_experiment.ipynb), which runs on a virtual microscope and explains every step. |
 | `reanalysis/` | Re-processing an experiment already on disk with new segmentation, tracking or features. No microscope needed. Raw images are never rewritten; the output folder gets hard links to the raw data plus fresh labels, tracks and `exp_data.parquet`. See [Re-analysis](../README.md#re-analysis) in the faro README. |
 
 ## Start a new experiment

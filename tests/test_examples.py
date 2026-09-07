@@ -97,7 +97,7 @@ USE_OLD_STIM_MASKS = True
 }
 
 EXAMPLE_PARAMS = {
-    "02_live_experiment.ipynb": """
+    "live_experiment.ipynb": """
 INTERVAL_S = 0.3
 N_BASELINE = 2
 N_STIM = 4
@@ -228,7 +228,7 @@ def test_template_folders_are_complete():
 # execution (kernel, virtual microscope)
 # ---------------------------------------------------------------------------
 @pytest.mark.examples
-@pytest.mark.parametrize("name", ["01_getting_started.ipynb", "02_live_experiment.ipynb"])
+@pytest.mark.parametrize("name", ["live_experiment.ipynb"])
 def test_example_runs(name: str):
     nb_path = EXAMPLES / name
     nb = _prepare(nb_path, fillers={}, params=EXAMPLE_PARAMS.get(name))

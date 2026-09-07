@@ -22,7 +22,7 @@ Pipeline   <-->  Controller   <-->   Microscope
 
 ## Quickstart
 
-Run [`examples/02_live_experiment.ipynb`](examples/02_live_experiment.ipynb) for a complete optogenetic feedback experiment on a virtual microscope. No hardware needed.
+Run [`examples/live_experiment.ipynb`](examples/live_experiment.ipynb) for a complete optogenetic feedback experiment on a virtual microscope. No hardware needed.
 
 ```python
 # 1. Set microscope
@@ -57,12 +57,11 @@ handle.wait()  # run_experiment is non-blocking; wait() blocks until done
 
 | Path | What it is |
 |------|------------|
-| [`examples/01_getting_started.ipynb`](examples/01_getting_started.ipynb) | A ten-frame timelapse on a virtual microscope. Introduces the four objects and shows where results land. |
-| [`examples/02_live_experiment.ipynb`](examples/02_live_experiment.ipynb) | A full feedback experiment on the virtual microscope: custom pipeline components, three phases, napari GUI, result plots. |
+| [`examples/live_experiment.ipynb`](examples/live_experiment.ipynb) | A full feedback experiment on a virtual microscope: the four objects, custom pipeline components, three phases, napari GUI, result plots. |
 | [`templates/live_experiment/`](templates/live_experiment/) | Copy-and-fill folder for a real experiment: notebook with TODO cells, `pyproject.toml`, and a short uv guide. |
 | [`templates/reanalysis/`](templates/reanalysis/) | Copy-and-fill folder to re-process an experiment that is already on disk. |
 
-The examples need `uv sync --extra virtual-microscope`. The test suite executes both examples and both templates on the virtual microscope, so they always match the code. Real experiments live in the separate [faro-experiments](https://github.com/pertzlab/faro-experiments) repository: one folder per experiment, each pinned to a faro commit.
+The example needs `uv sync --extra virtual-microscope`. The test suite executes the example and both templates on the virtual microscope, so they always match the code. Real experiments live in the separate [faro-experiments](https://github.com/pertzlab/faro-experiments) repository: one folder per experiment, each pinned to a faro commit.
 
 ## Pipeline
 
@@ -88,7 +87,7 @@ pipeline = ImageProcessingPipeline(
 
 ## Writing your own components
 
-Every component is a small class with one method. The pipeline calls that method once per frame and merges the result. `validate_events` compares your method signature with the base class before a run starts, so keep the argument names. The [live experiment example](examples/02_live_experiment.ipynb) implements one of each.
+Every component is a small class with one method. The pipeline calls that method once per frame and merges the result. `validate_events` compares your method signature with the base class before a run starts, so keep the argument names. The [live experiment example](examples/live_experiment.ipynb) implements one of each.
 
 ### Segmentator
 
