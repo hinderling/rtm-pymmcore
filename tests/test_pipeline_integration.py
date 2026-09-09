@@ -130,15 +130,26 @@ class TestEndToEndNoStim:
 
 
 class TestContinueExperimentOmeZarr:
-    """Continuing a single-position OME-Zarr run must grow the time axis.
+    """Continued and extended single-position OME-Zarr runs grow the time axis.
 
-    Regression: the ome-writers stream was created with a fixed time count,
-    so every frame of the continued phase failed with "would exceed total of
-    N frames" and was silently dropped (only logged as a background error).
+    Regression: the single-position raw array used to be an ome-writers
+    stream created with a fixed time count, so every frame past the first
+    run's length failed with "would exceed total of N frames" and was
+    silently dropped (only logged as a background error).
     """
 
-    def test_continued_frames_land_in_the_store(self, tmp_dir, tracker):
+    @staticmethod
+    def _check_store(ctrl, tmp_dir, n_total):
         import zarr
+
+        assert ctrl.background_errors == [], [
+            e.message for e in ctrl.background_errors
+        ]
+        raw = zarr.open(os.path.join(tmp_dir, "acquisition.ome.zarr"), mode="r")["0"]
+        assert raw.shape[0] == n_total, raw.shape
+        assert raw[n_total - 1].max() > 0, "last appended frame is empty"
+
+    def test_continued_frames_land_in_the_store(self, tmp_dir, tracker):
         from faro.core.writers import OmeZarrWriter
 
         pipeline = _make_pipeline(tmp_dir, tracker=tracker, with_stim=False)
@@ -150,13 +161,23 @@ class TestContinueExperimentOmeZarr:
         ctrl.continue_experiment(make_events(N_PHASE2_FRAMES), validate=False).wait()
         ctrl._analyzer.wait_idle()
         ctrl.finish_experiment()
+        self._check_store(ctrl, tmp_dir, N_TOTAL_FRAMES)
 
-        assert ctrl.background_errors == [], [
-            e.message for e in ctrl.background_errors
-        ]
-        raw = zarr.open(os.path.join(tmp_dir, "acquisition.ome.zarr"), mode="r")["0"]
-        assert raw.shape[0] == N_TOTAL_FRAMES, raw.shape
-        assert raw[N_TOTAL_FRAMES - 1].max() > 0, "last continued frame is empty"
+    def test_extended_frames_land_in_the_store(self, tmp_dir, tracker):
+        from faro.core.writers import OmeZarrWriter
+
+        pipeline = _make_pipeline(tmp_dir, tracker=tracker, with_stim=False)
+        ctrl = Controller(
+            FakeMicroscope(CircleScene()), pipeline, writer=OmeZarrWriter(tmp_dir)
+        )
+        # Same hook as TestExtendExperiment: extend once the queue exists.
+        ctrl._pre_loop_hook = lambda: ctrl.extend_experiment(
+            make_events(N_PHASE2_FRAMES)
+        )
+        ctrl.run_experiment(make_events(N_PHASE1_FRAMES), validate=False).wait()
+        ctrl._analyzer.wait_idle()
+        ctrl.finish_experiment()
+        self._check_store(ctrl, tmp_dir, N_TOTAL_FRAMES)
 
 
 class TestContinueExperimentModeMismatchRaises:
